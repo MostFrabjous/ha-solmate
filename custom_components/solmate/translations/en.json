@@ -1,0 +1,70 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to SolMate",
+        "data": {
+          "uri": "WebSocket URI",
+          "serial_num": "Serial Number",
+          "password": "Password"
+        },
+        "data_description": {
+          "uri": "WebSocket URI of your SolMate, e.g. ws://solmate:9124/",
+          "serial_num": "Serial number printed on your SolMate device"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Could not connect to SolMate. Check the URI, serial number, and password."
+    },
+    "abort": {
+      "already_configured": "This SolMate is already configured."
+    }
+  },
+  "services": {
+    "set_minimum_injection": {
+      "name": "Set Minimum Injection",
+      "description": "Set the minimum injection power in Watts (0–200 W).",
+      "fields": {
+        "injection": {
+          "name": "Injection",
+          "description": "Minimum injection power in Watts."
+        }
+      }
+    },
+    "set_maximum_injection": {
+      "name": "Set Maximum Injection",
+      "description": "Set the maximum injection power in Watts (0–800 W).",
+      "fields": {
+        "injection": {
+          "name": "Injection",
+          "description": "Maximum injection power in Watts."
+        }
+      }
+    },
+    "set_minimum_battery_percentage": {
+      "name": "Set Minimum Battery Percentage",
+      "description": "Set the minimum battery percentage before injection starts.",
+      "fields": {
+        "battery_percentage": {
+          "name": "Battery Percentage",
+          "description": "Minimum battery level in percent."
+        }
+      }
+    },
+    "set_boost_injection": {
+      "name": "Set Boost Injection",
+      "description": "Temporarily boost injection to a given wattage for a set duration. Set time to 0 to deactivate boost.",
+      "fields": {
+        "set_wattage": {
+          "name": "Wattage",
+          "description": "Boost injection power in Watts (0–800 W)."
+        },
+        "set_time": {
+          "name": "Duration",
+          "description": "Boost duration in seconds. Set to 0 to deactivate."
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "domain": "solmate",
+  "name": "EET SolMate",
+  "version": "0.1.0",
+  "config_flow": true,
+  "documentation": "https://codeberg.org/henry78/ha-solmate",
+  "issue_tracker": "https://codeberg.org/henry78/ha-solmate/issues",
+  "requirements": ["websockets>=12.0"],
+  "iot_class": "local_polling",
+  "codeowners": []
+}
