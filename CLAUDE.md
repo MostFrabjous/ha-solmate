@@ -18,9 +18,10 @@ custom_components/solmate/
 
 ## Device
 
-- URI: `ws://sun2plug.beeb.at:9124/` (local) or `ws://10.0.0.40:9124/`
+- URI: `ws://sun2plug.beeb.at:9124/` or `ws://10.0.0.40:9124/`
 - Serial and password: never hardcode — use config entry
 - API: local WebSocket, 3-step auth (login → signature → authenticate per session)
+- Credentials for testing: see HA config entry or ask Henry
 
 ## battery_state
 
@@ -28,12 +29,29 @@ Raw API value is a fraction (0.07 = 7%). `const.py` applies `× 100` via `value_
 
 ## Deploying to HA for testing
 
+`~/Remote/truenas-app-mounts` is an sshfs mount — `custom_components/` is owned by root so cp fails.
+Use scp instead:
+
 ```bash
-cp -r custom_components/solmate \
-  ~/Remote/truenas-app-mounts/home-assistant/config/custom_components/
+scp -r custom_components/solmate admin@10.0.0.10:/mnt/.ix-apps/app_mounts/home-assistant/config/custom_components/
 ```
 
-Then restart HA and add the integration under Settings → Integrations.
+Then restart HA: Settings → System → Restart.
+Add integration: Settings → Integrations → Add Integration → search "SolMate".
+
+HA is at https://home.beeb.at — TrueNAS at 10.0.0.10.
+
+## Current status
+
+- Code written, not yet deployed or tested
+- Next: deploy via scp, restart HA, configure integration, verify sensors
+
+## Publishing
+
+- Codeberg: https://codeberg.org (account: frabjous@mailbox.org)
+- Repo name: `ha-solmate`
+- Also mirror to GitHub for HACS discoverability
+- Update `manifest.json` documentation/issue_tracker URLs once repo is live
 
 ## Planned (v2)
 
