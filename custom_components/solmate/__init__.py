@@ -1,13 +1,16 @@
 import logging
+from datetime import timedelta
 
 import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_PASSWORD, Platform
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.event import async_track_time_interval
 
 from .const import DOMAIN, CONF_SERIAL, CONF_URI
 from .coordinator import SolmateCoordinator
+from .energy_stats import async_update_energy_stats
 
 _LOGGER = logging.getLogger(__name__)
 PLATFORMS = [Platform.SENSOR]
@@ -44,6 +47,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     _register_services(hass, coordinator)
+
+    # Initial energy stats backfill (runs in background, non-blocking)
+    hass.async_create_task(async_update_energy_stats(hass, coordinator))
+
+    # Hourly energy stats updates
+    cancel = async_track_time_interval(
+        hass,
+        lambda _now: hass.async_create_task(async_update_energy_stats(hass, coordinator)),
+        timedelta(hours=1),
+    )
+    entry.async_on_unload(cancel)
+
     return True
 
 

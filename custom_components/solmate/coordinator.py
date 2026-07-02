@@ -4,7 +4,7 @@ import hashlib
 import json
 import logging
 import random
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 import websockets
 from homeassistant.core import HomeAssistant
@@ -15,6 +15,7 @@ from .const import DOMAIN, UPDATE_INTERVAL
 _LOGGER = logging.getLogger(__name__)
 
 POLL_ROUTES = ["live_values", "get_injection_settings", "get_boost_injection"]
+_LOGS_BATCH_SIZE = 168  # one week of hourly timeframes per request
 
 
 class SolmateCoordinator(DataUpdateCoordinator):
@@ -101,6 +102,49 @@ class SolmateCoordinator(DataUpdateCoordinator):
         except Exception as err:
             self._signature = None
             raise UpdateFailed(f"SolMate communication error: {err}") from err
+
+    async def async_fetch_logs(self, start: datetime, end: datetime) -> list[dict]:
+        """Fetch hourly log data between start and end."""
+        t = start.replace(minute=0, second=0, microsecond=0)
+        timeframes = []
+        while t < end:
+            t_end = t + timedelta(hours=1)
+            timeframes.append({
+                "start": t.strftime("%Y-%m-%dT%H:%M:%S"),
+                "end": t_end.strftime("%Y-%m-%dT%H:%M:%S"),
+                "resolution": 3600,
+            })
+            t = t_end
+
+        results = []
+        for i in range(0, len(timeframes), _LOGS_BATCH_SIZE):
+            results.extend(await self._logs_batch(timeframes[i : i + _LOGS_BATCH_SIZE]))
+        return results
+
+    async def _logs_batch(self, timeframes: list[dict]) -> list[dict]:
+        if not self._signature:
+            await self._login()
+        msg_id = random.randint(1000, 9999)
+        async with websockets.connect(self._uri) as ws:
+            await ws.send(json.dumps({
+                "route": "authenticate", "id": msg_id,
+                "data": {"device_id": "web", "serial_num": self._serial, "signature": self._signature},
+            }))
+            auth_r = json.loads(await ws.recv())
+            if not auth_r.get("data", {}).get("success"):
+                self._signature = None
+                await self._login()
+                await ws.send(json.dumps({
+                    "route": "authenticate", "id": msg_id,
+                    "data": {"device_id": "web", "serial_num": self._serial, "signature": self._signature},
+                }))
+                json.loads(await ws.recv())
+            await ws.send(json.dumps({
+                "route": "logs", "id": msg_id,
+                "data": {"timeframes": timeframes},
+            }))
+            resp = json.loads(await ws.recv())
+        return resp.get("data", {}).get("logs", [])
 
     async def async_send_command(self, route: str, data: dict) -> bool:
         """Send a write command to the SolMate. Returns True on success."""
