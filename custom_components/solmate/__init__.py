@@ -4,7 +4,7 @@ from datetime import timedelta
 import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_PASSWORD, Platform
-from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.core import HomeAssistant, ServiceCall, callback
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.event import async_track_time_interval
 
@@ -52,11 +52,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.async_create_task(async_update_energy_stats(hass, coordinator))
 
     # Hourly energy stats updates
-    cancel = async_track_time_interval(
-        hass,
-        lambda _now: hass.async_create_task(async_update_energy_stats(hass, coordinator)),
-        timedelta(hours=1),
-    )
+    @callback
+    def _schedule_energy_update(_now):
+        hass.async_create_task(
+            async_update_energy_stats(hass, coordinator),
+            name="solmate_energy_stats",
+        )
+
+    cancel = async_track_time_interval(hass, _schedule_energy_update, timedelta(hours=1))
     entry.async_on_unload(cancel)
 
     return True
